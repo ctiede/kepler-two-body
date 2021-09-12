@@ -125,17 +125,20 @@ impl OrbitalParameters {
     }
 }
 
-fn solve_newton_rapheson<F: Fn(f64) -> f64, G: Fn(f64) -> f64>(f: F, g: G, mut x: f64) -> f64 {
+fn solve_newton_rapheson<F: Fn(f64) -> f64, G: Fn(f64) -> f64>(
+    f: F,
+    g: G,
+    mut x: f64,
+) -> Option<f64> {
     let mut n = 0;
-
-    while f64::abs(f(x)) > 1e-11 {
+    while f64::abs(f(x)) > 1e-15 {
         x -= f(x) / g(x);
         n += 1;
-        if n > 20 {
-            panic!("kepler_two_body::solve_newton_rapheson failed to converge")
+        if n > 10 {
+            return None;
         }
     }
-    return x;
+    Some(x)
 }
 
 fn clamp_between_zero_and_one(x: f64) -> f64 {
@@ -421,11 +424,14 @@ impl OrbitalElements {
     }
 
     pub fn eccentric_anomaly(self, t: f64) -> f64 {
+        let p = self.period();
+        let t = t - p * (t / p).floor();
         let e = self.eccentricity();
         let n = self.omega() * t; // n := mean anomaly M
         let f = |k| k - e * f64::sin(k) - n; // k := eccentric anomaly E
         let g = |k| 1.0 - e * f64::cos(k);
-        return solve_newton_rapheson(f, g, n);
+        solve_newton_rapheson(f, g, n)
+            .expect("kepler_two_body::OrbitalElements::eccentric_anomaly failed")
     }
 
     pub fn orbital_state_from_eccentric_anomaly(self, eccentric_anomaly: f64) -> OrbitalState {
@@ -713,13 +719,15 @@ mod tests {
     }
 
     /// This is a regression test to ensure that Newton-Rapheson succeeds when
-    /// e=0.45 and t/P = 1303.8. This combination of parameters causes the
-    /// determination of eccentric anomaly not to converge with a precision of
-    /// 1e-12. However, hard-coding a precision of 1e-11 in Newton-Rapheson
-    /// seems to resolve it.
+    /// e=0.45 and t/P = 1303.8. This combination of parameters caused the
+    /// determination of eccentric anomaly not to converge in earlier code
+    /// versions. Clamping the time between [0, P] seems to resolve the issue.
     #[test]
     fn orbital_state_does_not_deadlock_with_e45() {
-        let elements = OrbitalElements(1.0, 1.0, 1.0, 0.45);
-        let _ = elements.orbital_state_from_time(1303.8 * 2.0 * PI);
+        for x in 0..100_000 {
+            let dt = x as f64 * 1e-5;
+            let elements = OrbitalElements(1.0, 1.0, 1.0, 0.45);
+            let _ = elements.orbital_state_from_time((1303.0 + dt) * 2.0 * PI);
+        }
     }
 }
