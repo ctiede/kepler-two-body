@@ -505,6 +505,71 @@ impl OrbitalElements {
     }
 }
 
+impl OrbitalParameters {
+    pub fn orbital_state_from_time(&self, time: f64) -> OrbitalState {
+        self.0.orbital_state_from_time_and_orientation(time, self.1)
+    }
+}
+
+
+
+
+impl std::ops::Add<PointMass> for PointMass {
+    type Output = Self;
+    fn add(self, u: PointMass) -> PointMass {
+        PointMass(self.0 + u.0, self.1 + u.1, self.2 + u.2, self.3 + u.3, self.4 + u.4)
+    }
+}
+
+impl std::ops::Sub<PointMass> for PointMass {
+    type Output = Self;
+    fn sub(self, u: PointMass) -> PointMass {
+        PointMass(self.0 - u.0, self.1 - u.1, self.2 - u.2, self.3 - u.3, self.4 - u.4)
+    }
+}
+
+impl std::ops::Mul<f64> for PointMass {
+    type Output = PointMass;
+    fn mul(self, a: f64) -> PointMass {
+        PointMass(self.0 * a, self.1 * a, self.2 * a, self.3 * a, self.4 * a)
+    }
+}
+
+impl std::ops::Div<f64> for PointMass {
+    type Output = PointMass;
+    fn div(self, a: f64) -> PointMass {
+        PointMass(self.0 / a, self.1 / a, self.2 / a, self.3 / a, self.4 / a)
+    }
+}
+
+impl std::ops::Add<OrbitalState> for OrbitalState {
+    type Output = Self;
+    fn add(self, u: OrbitalState) -> OrbitalState {
+        OrbitalState(self.0 + u.0, self.1 + u.1)
+    }
+}
+
+impl std::ops::Sub<OrbitalState> for OrbitalState {
+    type Output = Self;
+    fn sub(self, u: OrbitalState) -> OrbitalState {
+        OrbitalState(self.0 - u.0, self.1 - u.1)
+    }
+}
+
+impl std::ops::Mul<f64> for OrbitalState {
+    type Output = OrbitalState;
+    fn mul(self, a: f64) -> OrbitalState {
+        OrbitalState(self.0 * a, self.1 * a)
+    }
+}
+
+impl std::ops::Div<f64> for OrbitalState {
+    type Output = OrbitalState;
+    fn div(self, a: f64) -> OrbitalState {
+        OrbitalState(self.0 / a, self.1 / a)
+    }
+}
+
 impl std::ops::Add<OrbitalElements> for OrbitalElements {
     type Output = Self;
     fn add(self, u: OrbitalElements) -> OrbitalElements {
